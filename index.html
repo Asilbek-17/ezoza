@@ -277,14 +277,75 @@
     cursor:pointer;
     z-index:10;
   }
+
+  /* entrance envelope */
+  .envelope-screen{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(circle at 50% 30%, var(--blush) 0%, var(--cream) 60%, #FBEDE6 100%);
+    cursor:pointer;
+    transition:opacity 0.6s ease, visibility 0.6s ease;
+  }
+  .envelope-screen.hidden-envelope{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+  .envelope-box{
+    text-align:center;
+    padding:20px;
+  }
+  .envelope-seal{
+    width:78px;
+    height:78px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--wine), var(--wine-deep));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    margin:0 auto 22px;
+    box-shadow:0 10px 26px -8px rgba(122,31,58,0.6);
+    animation:sealPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes sealPulse{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.08); }
+  }
+  .envelope-title{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:23px;
+    color:var(--wine-deep);
+    margin:0 0 8px;
+  }
+  .envelope-sub{
+    font-family:'Manrope', sans-serif;
+    font-size:13.5px;
+    color:var(--rose);
+    letter-spacing:0.3px;
+  }
 </style>
 </head>
 <body>
 
-<div class="sound-toggle" id="soundToggle" title="Musiqa">🎵</div>
+<div class="envelope-screen" id="envelopeScreen">
+  <div class="envelope-box">
+    <div class="envelope-seal">💌</div>
+    <p class="envelope-title">Ezozam uchun bir maktub bor</p>
+    <p class="envelope-sub">Ochish uchun bosing</p>
+  </div>
+</div>
+
+<div class="sound-toggle" id="soundToggle" title="Musiqa">🔇</div>
 
 <audio id="bgMusic" loop preload="auto">
-  <source src="./Oshiq-yurak.mp3" type="audio/mpeg">
+  <source src="oshiq-yurak.mp3" type="audio/mpeg">
 </audio>
 
 <div class="phone-wrap">
@@ -335,20 +396,33 @@ Telbadek boringcha sevadigan men</p>
     document.body.appendChild(p);
   }
 
-  // music handling — browsers block autoplay with sound until a user gesture
+  // music handling — try to start the instant the page loads.
+  // Most browsers still block audio-with-sound autoplay without a user
+  // gesture, so we attempt it right away, and silently fall back to
+  // starting on the very first tap/click if the browser blocked it.
   const music = document.getElementById('bgMusic');
   const soundToggle = document.getElementById('soundToggle');
   let musicStarted = false;
+  const elModal = document.querySelector(".envelope-screen")
 
   function tryStartMusic(){
     if(musicStarted) return;
     music.play().then(()=>{
       musicStarted = true;
       soundToggle.textContent = '🎵';
-    }).catch(()=>{ /* will retry on next interaction */ });
+      elModal.style.display = "none"
+
+    }).catch(()=>{ /* blocked — will retry on next interaction */ });
   }
 
+  // fire immediately
+  tryStartMusic();
+  window.addEventListener('load', tryStartMusic);
+  document.addEventListener('DOMContentLoaded', tryStartMusic);
+
+  // silent safety net in case the browser blocked the autoplay attempt
   document.body.addEventListener('click', tryStartMusic, { once:false });
+  document.body.addEventListener('touchstart', tryStartMusic, { once:false });
 
   soundToggle.addEventListener('click', (e)=>{
     e.stopPropagation();
@@ -357,6 +431,7 @@ Telbadek boringcha sevadigan men</p>
     } else {
       music.pause();
       soundToggle.textContent = '🔇';
+
     }
   });
 
